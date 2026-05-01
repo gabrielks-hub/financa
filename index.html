@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finança Pessoal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #F6F4EF;
+  --surface: #FFFFFF;
+  --border: rgba(0,0,0,0.07);
+  --text: #181612;
+  --muted: #78746C;
+  --faint: #B0ABA2;
+  --accent: #181612;
+  --green: #1E6641;
+  --green-bg: #D4EDDA;
+  --red: #8B1F2F;
+  --red-bg: #FAE0E4;
+  --blue: #174080;
+  --blue-bg: #DAE6F5;
+  --amber: #6B3E00;
+  --amber-bg: #FDEEC8;
+  --r: 14px;
+  --rs: 8px;
+  --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; }
+
+/* ── CONFIG ── */
+#cfg { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
+.cfg-box { background:var(--surface); border-radius:var(--r); padding:3rem; max-width:500px; width:100%; box-shadow:var(--shadow); border:1px solid var(--border); }
+.cfg-box h1 { font-family:'DM Serif Display',serif; font-size:2.2rem; margin-bottom:.4rem; }
+.cfg-box .sub { color:var(--muted); font-size:14px; line-height:1.7; margin-bottom:2rem; }
+.cfg-box label { font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:6px; }
+.cfg-box input { width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:var(--rs); font-family:'DM Sans',sans-serif; font-size:14px; background:var(--bg); color:var(--text); margin-bottom:1rem; }
+.cfg-box input:focus { outline:none; border-color:var(--accent); }
+.btn-p { width:100%; padding:14px; background:var(--accent); color:#fff; border:none; border-radius:var(--rs); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; cursor:pointer; transition:opacity .2s; }
+.btn-p:hover { opacity:.82; }
+.cfg-hint { font-size:12px; color:var(--faint); margin-top:1rem; text-align:center; }
+.cfg-hint a { color:var(--blue); cursor:pointer; }
+
+/* ── LAYOUT ── */
+#app { display:none; }
+.sidebar { position:fixed; left:0; top:0; bottom:0; width:228px; background:var(--surface); border-right:1px solid var(--border); padding:2rem 1rem; display:flex; flex-direction:column; z-index:100; }
+.logo { font-family:'DM Serif Display',serif; font-size:1.5rem; line-height:1; }
+.logo-small { font-size:12px; color:var(--faint); margin-bottom:2rem; margin-top:2px; }
+.nav-btn { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--rs); cursor:pointer; font-size:14px; color:var(--muted); margin-bottom:2px; transition:all .15s; border:none; background:none; width:100%; text-align:left; font-family:'DM Sans',sans-serif; }
+.nav-btn:hover { background:var(--bg); color:var(--text); }
+.nav-btn.active { background:var(--accent); color:#fff; }
+.nav-icon { width:18px; text-align:center; font-size:14px; }
+.sidebar-bottom { margin-top:auto; }
+.sync-wrap { border:1px solid var(--border); border-radius:var(--rs); padding:10px 12px; display:flex; align-items:center; gap:8px; cursor:pointer; background:none; font-size:13px; color:var(--muted); font-family:'DM Sans',sans-serif; width:100%; transition:background .15s; }
+.sync-wrap:hover { background:var(--bg); }
+.sync-msg { font-size:12px; color:var(--green); margin-top:6px; text-align:center; display:none; }
+.change-url { font-size:12px; color:var(--faint); text-align:center; margin-top:8px; cursor:pointer; }
+.change-url:hover { color:var(--blue); }
+
+.main { margin-left:228px; padding:2.5rem; }
+.page { display:none; }
+.page.active { display:block; }
+.ph { margin-bottom:2rem; }
+.ph h2 { font-family:'DM Serif Display',serif; font-size:2rem; }
+.ph p { color:var(--muted); font-size:14px; margin-top:4px; }
+
+/* ── METRICS ── */
+.metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:2rem; }
+.metric { background:var(--surface); border-radius:var(--r); padding:1.25rem 1.5rem; border:1px solid var(--border); }
+.metric .ml { font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.metric .mv { font-family:'DM Serif Display',serif; font-size:1.7rem; line-height:1.1; }
+.metric .ms { font-size:12px; color:var(--faint); margin-top:4px; }
+.cg { color:var(--green); } .cr { color:var(--red); } .cb { color:var(--blue); } .ca { color:var(--amber); }
+
+/* ── CARD ── */
+.card { background:var(--surface); border-radius:var(--r); border:1px solid var(--border); padding:1.5rem; margin-bottom:1.25rem; }
+.ct { font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; }
+.two { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
+
+/* ── FORM ── */
+.frow { display:flex; gap:8px; flex-wrap:wrap; }
+.frow input, .frow select { flex:1; min-width:110px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--rs); font-family:'DM Sans',sans-serif; font-size:14px; background:var(--bg); color:var(--text); }
+.frow input:focus, .frow select:focus { outline:none; border-color:var(--accent); }
+.btn-a { padding:10px 20px; background:var(--accent); color:#fff; border:none; border-radius:var(--rs); font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; cursor:pointer; white-space:nowrap; transition:opacity .15s; }
+.btn-a:hover { opacity:.82; }
+
+/* ── ROWS ── */
+.row { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--border); font-size:14px; }
+.row:last-child { border-bottom:none; }
+.row-r { display:flex; align-items:center; gap:10px; }
+.row-date { font-size:12px; color:var(--faint); }
+.badge { display:inline-block; font-size:11px; font-weight:500; padding:3px 10px; border-radius:20px; }
+.bg { background:var(--green-bg); color:var(--green); }
+.br { background:var(--red-bg); color:var(--red); }
+.bb { background:var(--blue-bg); color:var(--blue); }
+.ba { background:var(--amber-bg); color:var(--amber); }
+.del { background:none; border:none; cursor:pointer; color:var(--faint); font-size:15px; padding:2px 6px; border-radius:4px; transition:all .15s; }
+.del:hover { background:var(--red-bg); color:var(--red); }
+
+/* ── BAR ── */
+.bw { margin:10px 0; }
+.bl { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:5px; }
+.bb2 { height:7px; background:var(--bg); border-radius:4px; overflow:hidden; border:1px solid var(--border); }
+.bf { height:100%; border-radius:4px; transition:width .8s cubic-bezier(.4,0,.2,1); }
+
+/* ── CREDIT CARD ── */
+.cc { background:var(--accent); color:#fff; border-radius:var(--r); padding:1.5rem; margin-bottom:1rem; position:relative; overflow:hidden; }
+.cc::before { content:''; position:absolute; right:-40px; top:-40px; width:160px; height:160px; border-radius:50%; background:rgba(255,255,255,.04); }
+.cc::after { content:''; position:absolute; right:40px; bottom:-60px; width:130px; height:130px; border-radius:50%; background:rgba(255,255,255,.03); }
+.cc-name { font-size:12px; opacity:.55; margin-bottom:6px; letter-spacing:.04em; text-transform:uppercase; }
+.cc-limit { font-family:'DM Serif Display',serif; font-size:1.8rem; }
+.cc-row { display:flex; justify-content:space-between; margin-top:14px; font-size:13px; opacity:.7; }
+.cc-bar { height:3px; background:rgba(255,255,255,.15); border-radius:2px; margin-top:14px; overflow:hidden; }
+.cc-bf { height:100%; border-radius:2px; background:#fff; transition:width .8s; }
+
+/* ── OBJ ── */
+.obj-h { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.obj-name { font-weight:500; }
+.obj-pct { font-family:'DM Serif Display',serif; font-size:1.1rem; }
+.obj-foot { font-size:12px; color:var(--faint); margin-top:6px; }
+
+/* ── CHART ── */
+.ch { position:relative; height:250px; }
+
+/* ── EMPTY ── */
+.empty { padding:2rem; text-align:center; color:var(--faint); font-size:14px; line-height:1.7; }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:2rem; right:2rem; background:var(--accent); color:#fff; padding:12px 20px; border-radius:var(--rs); font-size:14px; z-index:9999; transform:translateY(80px); opacity:0; transition:all .3s ease; box-shadow:0 4px 20px rgba(0,0,0,.15); pointer-events:none; }
+.toast.show { transform:translateY(0); opacity:1; }
+
+/* ── LOADER ── */
+.loader { display:none; position:fixed; inset:0; background:rgba(246,244,239,.85); align-items:center; justify-content:center; z-index:999; font-size:14px; color:var(--muted); }
+.loader.on { display:flex; }
+
+@media(max-width:768px){
+  .sidebar{width:100%;position:relative;flex-direction:row;flex-wrap:wrap;gap:4px;padding:1rem;}
+  .main{margin-left:0;padding:1rem;}
+  .two{grid-template-columns:1fr;}
+  .logo-small,.change-url{display:none;}
+  .sidebar-bottom{margin-top:0;width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+<div class="loader" id="loader">Sincronizando com Google Sheets…</div>
+
+<!-- CONFIG -->
+<div id="cfg">
+  <div class="cfg-box">
+    <h1>Finança Pessoal</h1>
+    <p class="sub">Cole abaixo a URL do seu Google Apps Script para salvar dados na nuvem. Consulte o arquivo <strong>apps-script.js</strong> e o guia de configuração para obter essa URL.</p>
+    <label>URL do Google Apps Script</label>
+    <input type="url" id="script-url" placeholder="https://script.google.com/macros/s/…/exec" />
+    <button class="btn-p" onclick="saveConfig()">Entrar no sistema →</button>
+    <p class="cfg-hint">Ainda não configurou? <a onclick="skipConfig()">Entrar sem salvar na nuvem</a> por enquanto.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="sidebar">
+    <div class="logo">Finança</div>
+    <div class="logo-small">Pessoal</div>
+    <button class="nav-btn active" onclick="go('visao',this)"><span class="nav-icon">⬡</span>Visão geral</button>
+    <button class="nav-btn" onclick="go('despesas',this)"><span class="nav-icon">↓</span>Despesas</button>
+    <button class="nav-btn" onclick="go('ganhos',this)"><span class="nav-icon">↑</span>Ganhos</button>
+    <button class="nav-btn" onclick="go('cartoes',this)"><span class="nav-icon">▭</span>Cartões</button>
+    <button class="nav-btn" onclick="go('investimentos',this)"><span class="nav-icon">◎</span>Investimentos</button>
+    <button class="nav-btn" onclick="go('objetivos',this)"><span class="nav-icon">◇</span>Objetivos</button>
+    <div class="sidebar-bottom">
+      <button class="sync-wrap" onclick="syncAll()">⟳&nbsp;&nbsp;Salvar no Sheets</button>
+      <div class="sync-msg" id="sync-msg">✓ Dados salvos com sucesso</div>
+      <div class="change-url" onclick="document.getElementById('cfg').style.display='flex';document.getElementById('app').style.display='none'">Trocar URL do script</div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- VISÃO GERAL -->
+    <div id="p-visao" class="page active">
+      <div class="ph"><h2>Visão geral</h2><p>Resumo financeiro do mês atual</p></div>
+      <div class="metrics">
+        <div class="metric"><div class="ml">Saldo</div><div class="mv" id="m-saldo">R$ 0</div><div class="ms">Receitas − Despesas</div></div>
+        <div class="metric"><div class="ml">Receitas</div><div class="mv cg" id="m-rec">R$ 0</div><div class="ms">Este mês</div></div>
+        <div class="metric"><div class="ml">Despesas</div><div class="mv cr" id="m-desp">R$ 0</div><div class="ms">Este mês</div></div>
+        <div class="metric"><div class="ml">Investido</div><div class="mv cb" id="m-inv">R$ 0</div><div class="ms">Total na carteira</div></div>
+      </div>
+      <div class="two">
+        <div class="card"><div class="ct">Despesas por categoria</div><div id="cats"></div></div>
+        <div class="card"><div class="ct">Últimas transações</div><div id="recentes"></div></div>
+      </div>
+      <div class="card"><div class="ct">Receitas vs Despesas</div><div class="ch"><canvas id="chart-evolucao" role="img" aria-label="Gráfico de receitas e despesas mensais">Gráfico comparativo</canvas></div></div>
+    </div>
+
+    <!-- DESPESAS -->
+    <div id="p-despesas" class="page">
+      <div class="ph"><h2>Despesas</h2><p>Registre e acompanhe seus gastos</p></div>
+      <div class="card">
+        <div class="ct">Nova despesa</div>
+        <div class="frow">
+          <input type="text" id="d-desc" placeholder="Descrição" />
+          <input type="number" id="d-val" placeholder="Valor (R$)" step="0.01" />
+          <select id="d-cat">
+            <option>Alimentação</option><option>Moradia</option><option>Transporte</option>
+            <option>Saúde</option><option>Lazer</option><option>Educação</option>
+            <option>Vestuário</option><option>Assinaturas</option><option>Outros</option>
+          </select>
+          <input type="date" id="d-data" />
+          <button class="btn-a" onclick="addD()">+ Adicionar</button>
+        </div>
+      </div>
+      <div class="card"><div class="ct">Histórico</div><div id="lista-d"><div class="empty">Nenhuma despesa ainda.</div></div></div>
+    </div>
+
+    <!-- GANHOS -->
+    <div id="p-ganhos" class="page">
+      <div class="ph"><h2>Ganhos</h2><p>Registre suas entradas de dinheiro</p></div>
+      <div class="card">
+        <div class="ct">Novo ganho</div>
+        <div class="frow">
+          <input type="text" id="g-desc" placeholder="Descrição" />
+          <input type="number" id="g-val" placeholder="Valor (R$)" step="0.01" />
+          <select id="g-tipo">
+            <option>Salário</option><option>Freelance</option><option>Aluguel</option>
+            <option>Dividendos</option><option>13º Salário</option><option>Bônus</option><option>Outros</option>
+          </select>
+          <input type="date" id="g-data" />
+          <button class="btn-a" onclick="addG()">+ Adicionar</button>
+        </div>
+      </div>
+      <div class="card"><div class="ct">Histórico</div><div id="lista-g"><div class="empty">Nenhum ganho ainda.</div></div></div>
+    </div>
+
+    <!-- CARTÕES -->
+    <div id="p-cartoes" class="page">
+      <div class="ph"><h2>Cartões</h2><p>Acompanhe limites e faturas</p></div>
+      <div class="card">
+        <div class="ct">Adicionar cartão</div>
+        <div class="frow">
+          <input type="text" id="c-nome" placeholder="Nome do cartão" />
+          <input type="number" id="c-lim" placeholder="Limite (R$)" />
+          <input type="number" id="c-fat" placeholder="Fatura atual (R$)" />
+          <button class="btn-a" onclick="addC()">+ Adicionar</button>
+        </div>
+      </div>
+      <div id="lista-c"><div class="card"><div class="empty">Nenhum cartão ainda.</div></div></div>
+    </div>
+
+    <!-- INVESTIMENTOS -->
+    <div id="p-investimentos" class="page">
+      <div class="ph"><h2>Investimentos</h2><p>Sua carteira de investimentos</p></div>
+      <div class="card">
+        <div class="ct">Novo investimento</div>
+        <div class="frow">
+          <input type="text" id="i-nome" placeholder="Nome (ex: Tesouro Selic)" />
+          <input type="number" id="i-val" placeholder="Valor (R$)" />
+          <select id="i-tipo">
+            <option>Renda Fixa</option><option>Renda Variável</option><option>FIIs</option>
+            <option>Criptomoedas</option><option>Poupança</option><option>Ações</option><option>Outros</option>
+          </select>
+          <input type="number" id="i-rent" placeholder="Rentab. % a.a." step="0.1" />
+          <button class="btn-a" onclick="addI()">+ Adicionar</button>
+        </div>
+      </div>
+      <div class="two">
+        <div id="lista-i"><div class="card"><div class="empty">Nenhum investimento ainda.</div></div></div>
+        <div class="card" id="inv-chart-card" style="display:none">
+          <div class="ct">Distribuição da carteira</div>
+          <div class="ch"><canvas id="chart-inv" role="img" aria-label="Distribuição dos investimentos">Gráfico de investimentos</canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBJETIVOS -->
+    <div id="p-objetivos" class="page">
+      <div class="ph"><h2>Objetivos</h2><p>Metas financeiras e progresso</p></div>
+      <div class="card">
+        <div class="ct">Novo objetivo</div>
+        <div class="frow">
+          <input type="text" id="o-nome" placeholder="Ex: Viagem para Europa" />
+          <input type="number" id="o-meta" placeholder="Meta (R$)" />
+          <input type="number" id="o-atual" placeholder="Valor atual (R$)" />
+          <input type="date" id="o-prazo" />
+          <button class="btn-a" onclick="addO()">+ Adicionar</button>
+        </div>
+      </div>
+      <div id="lista-o"><div class="card"><div class="empty">Nenhum objetivo ainda.</div></div></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── STATE ──
+const S = { despesas:[], ganhos:[], cartoes:[], investimentos:[], objetivos:[] };
+let SCRIPT_URL = '';
+let evolChart = null, invChart = null;
+
+// ── UTILS ──
+const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const today = () => new Date().toISOString().split('T')[0];
+const id = () => Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+
+function toast(msg, dur=2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function setLoader(on) { document.getElementById('loader').classList.toggle('on', on); }
+
+// ── CONFIG ──
+function saveConfig() {
+  const url = document.getElementById('script-url').value.trim();
+  if (!url) { toast('Cole a URL do Apps Script primeiro.'); return; }
+  SCRIPT_URL = url;
+  localStorage.setItem('fin_url', url);
+  startApp();
+}
+function skipConfig() {
+  SCRIPT_URL = '';
+  startApp();
+}
+function startApp() {
+  document.getElementById('cfg').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadLocal();
+  if (SCRIPT_URL) loadFromSheets();
+  setDateDefaults();
+  renderAll();
+}
+
+// ── PERSIST LOCAL ──
+function saveLocal() { localStorage.setItem('fin_data', JSON.stringify(S)); }
+function loadLocal() {
+  const url = localStorage.getItem('fin_url');
+  if (url) SCRIPT_URL = url;
+  const d = localStorage.getItem('fin_data');
+  if (d) { const p = JSON.parse(d); Object.assign(S, p); }
+}
+
+function setDateDefaults() {
+  ['d-data','g-data','o-prazo'].forEach(id => { const el = document.getElementById(id); if(el) el.value = today(); });
+}
+
+// ── SHEETS SYNC ──
+async function syncAll() {
+  if (!SCRIPT_URL) { toast('Configure a URL do Apps Script para salvar na nuvem.'); return; }
+  setLoader(true);
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveAll', data: S })
+    });
+    const json = await res.json();
+    if (json.ok) {
+      toast('✓ Dados salvos no Google Sheets!');
+      const m = document.getElementById('sync-msg');
+      m.style.display = 'block';
+      setTimeout(() => m.style.display = 'none', 3000);
+    } else { toast('Erro ao salvar: ' + (json.error || 'tente novamente')); }
+  } catch(e) { toast('Erro de conexão com o script.'); }
+  setLoader(false);
+}
+
+async function loadFromSheets() {
+  if (!SCRIPT_URL) return;
+  setLoader(true);
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=loadAll');
+    const json = await res.json();
+    if (json.ok && json.data) {
+      Object.assign(S, json.data);
+      saveLocal();
+      renderAll();
+      toast('✓ Dados carregados do Google Sheets');
+    }
+  } catch(e) { /* silent — use local */ }
+  setLoader(false);
+}
+
+// ── NAVIGATION ──
+function go(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('p-' + page).classList.add('active');
+  btn.classList.add('active');
+  if (page === 'visao') renderVisao();
+  if (page === 'investimentos') renderInvChart();
+}
+
+// ── ADD DESPESA ──
+function addD() {
+  const desc = document.getElementById('d-desc').value.trim();
+  const val = parseFloat(document.getElementById('d-val').value);
+  const cat = document.getElementById('d-cat').value;
+  const data = document.getElementById('d-data').value || today();
+  if (!desc || !val || val <= 0) { toast('Preencha descrição e valor.'); return; }
+  S.despesas.push({ id: id(), desc, val, cat, data });
+  document.getElementById('d-desc').value = '';
+  document.getElementById('d-val').value = '';
+  saveLocal(); renderD(); renderVisao();
+}
+
+function renderD() {
+  const el = document.getElementById('lista-d');
+  if (!S.despesas.length) { el.innerHTML = '<div class="empty">Nenhuma despesa ainda.</div>'; return; }
+  el.innerHTML = S.despesas.slice().reverse().map(d =>
+    `<div class="row">
+      <span>${d.desc} <span class="badge br">${d.cat}</span></span>
+      <div class="row-r">
+        <span class="row-date">${fmtDate(d.data)}</span>
+        <span style="font-weight:500;color:var(--red)">${fmt(d.val)}</span>
+        <button class="del" onclick="delItem('despesas','${d.id}',renderD)">×</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── ADD GANHO ──
+function addG() {
+  const desc = document.getElementById('g-desc').value.trim();
+  const val = parseFloat(document.getElementById('g-val').value);
+  const tipo = document.getElementById('g-tipo').value;
+  const data = document.getElementById('g-data').value || today();
+  if (!desc || !val || val <= 0) { toast('Preencha descrição e valor.'); return; }
+  S.ganhos.push({ id: id(), desc, val, tipo, data });
+  document.getElementById('g-desc').value = '';
+  document.getElementById('g-val').value = '';
+  saveLocal(); renderG(); renderVisao();
+}
+
+function renderG() {
+  const el = document.getElementById('lista-g');
+  if (!S.ganhos.length) { el.innerHTML = '<div class="empty">Nenhum ganho ainda.</div>'; return; }
+  el.innerHTML = S.ganhos.slice().reverse().map(g =>
+    `<div class="row">
+      <span>${g.desc} <span class="badge bg">${g.tipo}</span></span>
+      <div class="row-r">
+        <span class="row-date">${fmtDate(g.data)}</span>
+        <span style="font-weight:500;color:var(--green)">${fmt(g.val)}</span>
+        <button class="del" onclick="delItem('ganhos','${g.id}',renderG)">×</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── ADD CARTÃO ──
+function addC() {
+  const nome = document.getElementById('c-nome').value.trim();
+  const lim = parseFloat(document.getElementById('c-lim').value);
+  const fat = parseFloat(document.getElementById('c-fat').value) || 0;
+  if (!nome || !lim) { toast('Preencha nome e limite.'); return; }
+  S.cartoes.push({ id: id(), nome, lim, fat });
+  document.getElementById('c-nome').value = '';
+  document.getElementById('c-lim').value = '';
+  document.getElementById('c-fat').value = '';
+  saveLocal(); renderC();
+}
+
+function renderC() {
+  const el = document.getElementById('lista-c');
+  if (!S.cartoes.length) { el.innerHTML = '<div class="card"><div class="empty">Nenhum cartão ainda.</div></div>'; return; }
+  el.innerHTML = S.cartoes.map(c => {
+    const pct = Math.min(100, Math.round((c.fat / c.lim) * 100));
+    const cor = pct > 80 ? '#C0392B' : pct > 50 ? '#D68910' : '#1E8449';
+    return `<div class="cc">
+      <div class="cc-name">${c.nome}</div>
+      <div class="cc-limit">${fmt(c.lim)}</div>
+      <div class="cc-bar"><div class="cc-bf" style="width:${pct}%;background:${cor}"></div></div>
+      <div class="cc-row">
+        <span>Fatura: ${fmt(c.fat)}</span>
+        <span>Disponível: ${fmt(c.lim - c.fat)} · ${pct}% usado</span>
+        <button style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:12px" onclick="delItem('cartoes','${c.id}',renderC)">remover</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ADD INVESTIMENTO ──
+function addI() {
+  const nome = document.getElementById('i-nome').value.trim();
+  const val = parseFloat(document.getElementById('i-val').value);
+  const tipo = document.getElementById('i-tipo').value;
+  const rent = parseFloat(document.getElementById('i-rent').value) || 0;
+  if (!nome || !val) { toast('Preencha nome e valor.'); return; }
+  S.investimentos.push({ id: id(), nome, val, tipo, rent });
+  document.getElementById('i-nome').value = '';
+  document.getElementById('i-val').value = '';
+  document.getElementById('i-rent').value = '';
+  saveLocal(); renderI(); renderInvChart(); renderVisao();
+}
+
+function renderI() {
+  const el = document.getElementById('lista-i');
+  const total = S.investimentos.reduce((s,i) => s+i.val, 0);
+  if (!S.investimentos.length) { el.innerHTML = '<div class="card"><div class="empty">Nenhum investimento ainda.</div></div>'; document.getElementById('inv-chart-card').style.display='none'; return; }
+  document.getElementById('inv-chart-card').style.display = 'block';
+  el.innerHTML = S.investimentos.map(inv => {
+    const pct = total > 0 ? Math.round((inv.val/total)*100) : 0;
+    return `<div class="card" style="margin-bottom:.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:500">${inv.nome}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge bb">${inv.tipo}</span>
+          <button class="del" onclick="delItem('investimentos','${inv.id}',()=>{renderI();renderInvChart();renderVisao();})">×</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)">
+        <span>${fmt(inv.val)} · <span style="color:var(--green)">${inv.rent}% a.a.</span></span>
+        <span>${pct}% da carteira</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderInvChart() {
+  if (!S.investimentos.length) return;
+  const colors = ['#174080','#1E6641','#6B3E00','#8B1F2F','#4A235A','#117A65','#7D6608'];
+  const ctx = document.getElementById('chart-inv').getContext('2d');
+  if (invChart) invChart.destroy();
+  invChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: S.investimentos.map(i => i.nome),
+      datasets: [{ data: S.investimentos.map(i => i.val), backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ font:{size:12}, boxWidth:10, padding:16 } } } }
+  });
+}
+
+// ── ADD OBJETIVO ──
+function addO() {
+  const nome = document.getElementById('o-nome').value.trim();
+  const meta = parseFloat(document.getElementById('o-meta').value);
+  const atual = parseFloat(document.getElementById('o-atual').value) || 0;
+  const prazo = document.getElementById('o-prazo').value;
+  if (!nome || !meta) { toast('Preencha nome e meta.'); return; }
+  S.objetivos.push({ id: id(), nome, meta, atual, prazo });
+  document.getElementById('o-nome').value = '';
+  document.getElementById('o-meta').value = '';
+  document.getElementById('o-atual').value = '';
+  saveLocal(); renderO();
+}
+
+function renderO() {
+  const el = document.getElementById('lista-o');
+  if (!S.objetivos.length) { el.innerHTML = '<div class="card"><div class="empty">Nenhum objetivo ainda.</div></div>'; return; }
+  el.innerHTML = S.objetivos.map(o => {
+    const pct = Math.min(100, Math.round((o.atual/o.meta)*100));
+    const falta = Math.max(0, o.meta - o.atual);
+    const cor = pct>=100 ? '#1E6641' : pct>=60 ? '#117A65' : pct>=30 ? '#D68910' : '#174080';
+    return `<div class="card" style="margin-bottom:.75rem">
+      <div class="obj-h">
+        <span class="obj-name">${o.nome}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="obj-pct" style="color:${cor}">${pct}%</span>
+          <button class="del" onclick="delItem('objetivos','${o.id}',renderO)">×</button>
+        </div>
+      </div>
+      <div class="bw">
+        <div class="bl"><span>Atual: ${fmt(o.atual)}</span><span>Meta: ${fmt(o.meta)}</span></div>
+        <div class="bb2"><div class="bf" style="width:${pct}%;background:${cor}"></div></div>
+      </div>
+      <div class="obj-foot">${pct<100 ? 'Faltam '+fmt(falta) : '✓ Objetivo atingido!'}${o.prazo ? ' · Prazo: '+fmtDate(o.prazo) : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── DELETE ──
+function delItem(list, itemId, cb) {
+  S[list] = S[list].filter(x => x.id !== itemId);
+  saveLocal();
+  if (typeof cb === 'function') cb();
+  else if (typeof cb === 'string') eval(cb)();
+  renderVisao();
+}
+
+// ── VISÃO GERAL ──
+function renderVisao() {
+  const tG = S.ganhos.reduce((s,g) => s+g.val, 0);
+  const tD = S.despesas.reduce((s,d) => s+d.val, 0);
+  const tI = S.investimentos.reduce((s,i) => s+i.val, 0);
+  const saldo = tG - tD;
+  const mSaldo = document.getElementById('m-saldo');
+  mSaldo.textContent = fmt(saldo);
+  mSaldo.className = 'mv ' + (saldo >= 0 ? 'cg' : 'cr');
+  document.getElementById('m-rec').textContent = fmt(tG);
+  document.getElementById('m-desp').textContent = fmt(tD);
+  document.getElementById('m-inv').textContent = fmt(tI);
+
+  // cats
+  const cats = {};
+  S.despesas.forEach(d => { cats[d.cat] = (cats[d.cat]||0) + d.val; });
+  const cEl = document.getElementById('cats');
+  if (!Object.keys(cats).length) { cEl.innerHTML = '<div class="empty">Sem despesas registradas.</div>'; }
+  else {
+    const maxV = Math.max(...Object.values(cats));
+    cEl.innerHTML = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat,val]) => {
+      const pct = Math.round((val/maxV)*100);
+      return `<div class="bw"><div class="bl"><span>${cat}</span><span>${fmt(val)}</span></div><div class="bb2"><div class="bf" style="width:${pct}%;background:var(--blue)"></div></div></div>`;
+    }).join('');
+  }
+
+  // recentes
+  const all = [
+    ...S.ganhos.map(g => ({...g, kind:'g'})),
+    ...S.despesas.map(d => ({...d, kind:'d'}))
+  ].sort((a,b) => b.data.localeCompare(a.data)).slice(0,8);
+  const rEl = document.getElementById('recentes');
+  if (!all.length) { rEl.innerHTML = '<div class="empty">Nenhuma transação ainda.</div>'; }
+  else {
+    rEl.innerHTML = all.map(t =>
+      `<div class="row">
+        <span style="font-size:14px">${t.desc}</span>
+        <span style="font-weight:500;color:${t.kind==='g'?'var(--green)':'var(--red)'};font-size:14px">${t.kind==='g'?'+':'-'}${fmt(t.val)}</span>
+      </div>`
+    ).join('');
+  }
+
+  // evolução chart
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const now = new Date();
+  const labels = [], recData = [], despData = [];
+  for (let i=5; i>=0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const m = d.getMonth(), y = d.getFullYear();
+    labels.push(meses[m]);
+    recData.push(S.ganhos.filter(g => { const gd=new Date(g.data); return gd.getMonth()===m && gd.getFullYear()===y; }).reduce((s,g)=>s+g.val,0));
+    despData.push(S.despesas.filter(d2 => { const dd=new Date(d2.data); return dd.getMonth()===m && dd.getFullYear()===y; }).reduce((s,d2)=>s+d2.val,0));
+  }
+  const ctx = document.getElementById('chart-evolucao').getContext('2d');
+  if (evolChart) evolChart.destroy();
+  evolChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Receitas', data:recData, backgroundColor:'#1E6641', borderRadius:4 },
+        { label:'Despesas', data:despData, backgroundColor:'#F0997B', borderRadius:4 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ font:{size:12}, boxWidth:10 } } },
+      scales:{
+        x:{ grid:{display:false} },
+        y:{ grid:{color:'rgba(0,0,0,0.04)'}, ticks:{ callback: v => 'R$'+Number(v).toLocaleString('pt-BR') } }
+      }
+    }
+  });
+}
+
+function renderAll() {
+  renderVisao(); renderD(); renderG(); renderC(); renderI(); renderO();
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+// ── INIT ──
+window.onload = () => {
+  loadLocal();
+  if (SCRIPT_URL) {
+    document.getElementById('script-url').value = SCRIPT_URL;
+  }
+  setDateDefaults();
+};
+</script>
+</body>
+</html>
